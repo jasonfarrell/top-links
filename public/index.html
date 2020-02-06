@@ -1,0 +1,107 @@
+<head>
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata:400,700&display=swap" rel="stylesheet">
+    <title>Top links on Twitter From Designers, Technologists, and Artists</title>
+    <style type="text/css">
+        * {
+            font-family: 'Inconsolata', monospace;
+        }
+        body {
+            margin: 20px 40px;
+        }
+        #content {
+            margin: 0 auto;
+            max-width: 800px;
+        }
+
+        ul {
+            margin: 0;
+            padding: 0;
+        }
+
+        li {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+        }
+        a {
+            background: #f5f5f5;
+            text-decoration: none;
+            transition: all 0.5s ease-out;
+            display: block;
+        }
+        a:hover {
+            background: #dcdcdc;
+            color: black;
+        }
+
+        .link {
+            display: flex;
+        }
+        .link div {
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+        .link img {
+            width: 80px;
+            height: auto;
+            object-fit: cover;
+        }
+        .details {
+            font-size: 0.7em;
+        }
+    </style>
+</head>
+<body>
+    <div id="content">
+        <h1>Top links on Twitter</h1>
+        <h2>From Designers, Technologists, and Artists</h2>
+        <ul id="links"></ul>
+    </div>
+    <script type="text/javascript">
+        async function load() {
+            const links = await fetch('/api/links')
+            const json = await links.json()
+            const el = document.querySelector('#links')
+            json.links.forEach(tweet => {
+                const date = new Date(tweet.created_at)
+                const li = document.createElement('li')
+                const a = document.createElement('a')
+                const og = document.createElement('div')
+                og.classList.add('link')
+                li.appendChild(a)
+                
+                a.setAttribute('target', '_blank')
+                //li.innerText = tweet.entities.urls[0].expanded_url
+                a.setAttribute('href', tweet.entities.urls[0].expanded_url)
+                a.appendChild(og)
+                el.appendChild(li)
+                showOgData(
+                    tweet.entities.urls[0].expanded_url,
+                    og,
+                    `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`,
+                    tweet.score
+                    )
+            })
+        }
+        load()
+
+        async function showOgData(url, container, date, engagementCount) {
+            const response = await fetch(`/api/metadata?url=${encodeURIComponent(url)}`);
+            const json = await response.json();
+            const {data} = json.data
+            let html = '';
+            if (data.ogImage && data.ogImage.url) {
+                html = `<img src="${data.ogImage.url}">`
+            } else if (data.twitterImage && data.twitterImage.url) {
+                html = `<img src="${data.twitterImage.url}">`
+            }
+            html += `
+                <div>
+                <h3>${data.ogTitle}</h3>
+                <p class="details">Engagement: ${engagementCount} - Tweeted on: ${date}</p>
+                </div>
+            `
+            container.innerHTML = html
+        }
+    </script>
+</body>
